@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"syscall"
 
 	"github.com/gorilla/websocket"
@@ -17,7 +18,7 @@ type KQueue struct {
 	changes     []syscall.Kevent_t
 	events      []syscall.Kevent_t
 	connections map[uint64]*websocket.Conn
-	// lock        *sync.RWMutex
+	lock        *sync.RWMutex
 }
 
 func NewKQueue() *KQueue {
@@ -27,9 +28,9 @@ func NewKQueue() *KQueue {
 	}
 
 	return &KQueue{
-		fd:     fd,
-		events: make([]syscall.Kevent_t, 64),
-		// lock:        &sync.RWMutex{},
+		fd:          fd,
+		events:      make([]syscall.Kevent_t, 64),
+		lock:        &sync.RWMutex{},
 		connections: make(map[uint64]*websocket.Conn),
 	}
 }
@@ -38,7 +39,14 @@ func (k *KQueue) Add(wsConn *websocket.Conn) error {
 
 	fmt.Println("add connection")
 
+	k.lock.Lock()
+	defer k.lock.Unlock()
+
 	fd := Util{}.GetFD(wsConn)
+
+	if fd == 0 {
+		return nil
+	}
 
 	readChange := syscall.Kevent_t{
 		Ident:  fd,
@@ -48,8 +56,6 @@ func (k *KQueue) Add(wsConn *websocket.Conn) error {
 
 	k.changes = append(k.changes, readChange)
 
-	// k.lock.Lock()
-	// defer k.lock.Unlock()
 	k.connections[fd] = wsConn
 
 	fmt.Println("add connection end")
@@ -61,7 +67,14 @@ func (k *KQueue) Remove(wsConn *websocket.Conn) error {
 
 	fmt.Println("remove connection")
 
+	k.lock.Lock()
+	defer k.lock.Unlock()
+
 	fd := Util{}.GetFD(wsConn)
+
+	if fd == 0 {
+		return nil
+	}
 
 	deletedChange := syscall.Kevent_t{
 		Ident: fd,
@@ -70,8 +83,6 @@ func (k *KQueue) Remove(wsConn *websocket.Conn) error {
 
 	k.changes = append(k.changes, deletedChange)
 
-	// k.lock.Lock()
-	// defer k.lock.Unlock()
 	delete(k.connections, fd)
 
 	fmt.Println("remove connection end")
@@ -100,16 +111,12 @@ func (k *KQueue) Wait(timeout int64) ([]*websocket.Conn, error) {
 		panic(err)
 	}
 
-	// fmt.Println("wait middle")
-
-	// k.changes = k.changes[:0]
+	k.lock.RLock()
 	for i := 0; i < nev; i++ {
-		// fmt.Println(nev)
 		conn := k.connections[k.events[i].Ident]
 		conns = append(conns, conn)
 	}
-
-	// fmt.Println("wait return")
+	k.lock.RUnlock()
 
 	return conns, nil
 }

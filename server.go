@@ -1,11 +1,9 @@
 package main
 
-import (
-	"log"
-)
+import "log"
 
 type Server struct {
-	kq        *KQueue
+	kq        iPoll
 	kqTimeout int64
 }
 
@@ -23,12 +21,15 @@ func (s *Server) Start() {
 		}
 
 		for _, conn := range conns {
-			_, msg, err := conn.ReadMessage()
+			if conn != nil {
+				_, msg, err := conn.ReadMessage()
 
-			if err != nil {
-				s.kq.Remove(conn)
-				conn.Close()
-			} else {
+				if err != nil {
+					s.kq.Remove(conn)
+					conn.Close()
+					continue
+				}
+
 				log.Printf("msg: %s", string(msg))
 			}
 		}
