@@ -14,10 +14,11 @@ import (
 
 var (
 	ip          = flag.String("ip", "127.0.0.1", "server IP")
-	connections = flag.Int("conn", 3, "number of websocket connections")
+	connections = flag.Int("conn", 1, "number of websocket connections")
 )
 
 func main() {
+
 	flag.Usage = func() {
 		io.WriteString(os.Stderr, `Websockets client generator Example usage: ./client -ip=172.17.0.1 -conn=10`)
 		flag.PrintDefaults()
@@ -26,6 +27,7 @@ func main() {
 
 	u := url.URL{Scheme: "ws", Host: *ip + ":8000", Path: "/"}
 	log.Printf("Connecting to %s", u.String())
+
 	var conns []*websocket.Conn
 	for i := 0; i < *connections; i++ {
 		c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
@@ -46,6 +48,26 @@ func main() {
 	if *connections > 100 {
 		tts = time.Millisecond * 5
 	}
+
+	//
+	go func() {
+		for {
+			for i := 0; i < len(conns); i++ {
+				time.Sleep(tts)
+				conn := conns[i]
+
+				_, bb, err := conn.ReadMessage()
+				if err != nil {
+					fmt.Println(err.Error())
+					continue
+				}
+
+				fmt.Println(string(bb))
+			}
+		}
+	}()
+	//
+
 	for {
 		for i := 0; i < len(conns); i++ {
 			time.Sleep(tts)

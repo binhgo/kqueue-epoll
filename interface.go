@@ -1,9 +1,11 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"net"
+)
 
 type iPoll interface {
-	Add(conn *websocket.Conn) error
-	Remove(conn *websocket.Conn) error
-	Wait(int64) ([]*websocket.Conn, error)
+	Add(conn net.Conn) error
+	Remove(conn net.Conn) error
+	Wait(int64) ([]net.Conn, error)
 }

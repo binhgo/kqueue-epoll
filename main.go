@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/websocket"
+	"github.com/gobwas/ws"
 )
 
 var sv *Server
@@ -28,8 +28,7 @@ func main() {
 
 func WS(w http.ResponseWriter, r *http.Request) {
 
-	upgrade := websocket.Upgrader{}
-	conn, err := upgrade.Upgrade(w, r, nil)
+	conn, _, _, err := ws.UpgradeHTTP(r, w)
 	if err != nil {
 		return
 	}

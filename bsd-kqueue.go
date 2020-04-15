@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"sync"
 	"syscall"
-
-	"github.com/gorilla/websocket"
 )
 
 var timespec = &syscall.Timespec{
@@ -17,7 +16,7 @@ type KQueue struct {
 	fd          int
 	changes     []syscall.Kevent_t
 	events      []syscall.Kevent_t
-	connections map[uint64]*websocket.Conn
+	connections map[uint64]net.Conn
 	lock        *sync.RWMutex
 }
 
@@ -31,18 +30,18 @@ func NewKQueue() *KQueue {
 		fd:          fd,
 		events:      make([]syscall.Kevent_t, 64),
 		lock:        &sync.RWMutex{},
-		connections: make(map[uint64]*websocket.Conn),
+		connections: make(map[uint64]net.Conn),
 	}
 }
 
-func (k *KQueue) Add(wsConn *websocket.Conn) error {
+func (k *KQueue) Add(wsConn net.Conn) error {
 
 	fmt.Println("add connection")
 
 	k.lock.Lock()
 	defer k.lock.Unlock()
 
-	fd := Util{}.GetFD(wsConn)
+	fd := Util{}.GetFD2(wsConn)
 
 	if fd == 0 {
 		return nil
@@ -63,14 +62,14 @@ func (k *KQueue) Add(wsConn *websocket.Conn) error {
 	return nil
 }
 
-func (k *KQueue) Remove(wsConn *websocket.Conn) error {
+func (k *KQueue) Remove(wsConn net.Conn) error {
 
 	fmt.Println("remove connection")
 
 	k.lock.Lock()
 	defer k.lock.Unlock()
 
-	fd := Util{}.GetFD(wsConn)
+	fd := Util{}.GetFD2(wsConn)
 
 	if fd == 0 {
 		return nil
@@ -90,11 +89,9 @@ func (k *KQueue) Remove(wsConn *websocket.Conn) error {
 	return nil
 }
 
-func (k *KQueue) Wait(timeout int64) ([]*websocket.Conn, error) {
+func (k *KQueue) Wait(timeout int64) ([]net.Conn, error) {
 
-	// fmt.Println("start wait")
-
-	var conns []*websocket.Conn
+	var conns []net.Conn
 
 	var nev int
 	var err error

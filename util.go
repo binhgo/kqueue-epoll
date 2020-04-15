@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"reflect"
 
 	"github.com/gorilla/websocket"
@@ -34,4 +35,16 @@ func (u Util) FromJson(data []byte, v interface{}) error {
 func (u Util) ToJson(object interface{}) ([]byte, error) {
 	b, err := json.Marshal(&object)
 	return b, err
+}
+
+func (u Util) GetFD2(conn net.Conn) uint64 {
+	if conn != nil {
+		tcpConn := reflect.Indirect(reflect.ValueOf(conn)).FieldByName("conn")
+		fdVal := tcpConn.FieldByName("fd")
+		pfdVal := reflect.Indirect(fdVal).FieldByName("pfd")
+
+		return uint64(pfdVal.FieldByName("Sysfd").Int())
+	}
+
+	return 0
 }
