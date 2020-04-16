@@ -82,4 +82,4 @@ func main() {
 	}
 }
 
-var ping = "{\"Method\": \"GET_PERSON\",\"Model\": \"PERSON\"}"
+var ping = "{\"Method\": \"GET_ORDER\",\"Model\": \"PERSON\"}"

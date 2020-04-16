@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -17,9 +16,7 @@ func main() {
 	sv = NewServer(-10)
 	go sv.Start()
 
-	sv.SetHandle("/order", handleOrder)
-
-	fmt.Println("Server started")
+	sv.SetHandle("GET_ORDER", handleOrder)
 
 	http.HandleFunc("/", UpgradeWebsocket)
 	err := http.ListenAndServe(":8000", nil)
@@ -48,7 +45,7 @@ func UpgradeWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	err = sv.kq.Add(conn)
 	if err != nil {
-		log.Printf("Fail to add connection")
+		log.Printf("FAIL TO ADD CONNECTION")
 		conn.Close()
 	}
 }

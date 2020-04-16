@@ -61,14 +61,27 @@ func (s *Server) Process(conn net.Conn) {
 	err = Util{}.FromJson(msg, &req)
 
 	bb := bytes.Buffer{}
+
 	if err != nil {
-		bb.WriteString("Error parse request")
+		bb.WriteString("ERROR PARSE REQUEST: [")
+		bb.WriteString(string(msg))
+		bb.WriteString("]")
+
 		wsutil.WriteServerText(conn, bb.Bytes())
 		return
 	}
 
 	// process data
 	handleFunc := s.GetHandler(req.Method)
+	if handleFunc == nil {
+		bb.WriteString("NO HANDLER for METHOD: [")
+		bb.WriteString(req.Model)
+		bb.WriteString("]")
+
+		wsutil.WriteServerText(conn, bb.Bytes())
+		return
+	}
+
 	response := handleFunc(req)
 
 	jsn, err := Util{}.ToJson(response)
