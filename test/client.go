@@ -76,7 +76,10 @@ func main() {
 			if err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(time.Second*5)); err != nil {
 				fmt.Printf("Failed to receive pong: %v", err)
 			}
-			conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Hello from conn %v", i)))
+			// conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Hello from conn %v", i)))
+			conn.WriteMessage(websocket.TextMessage, []byte(ping))
 		}
 	}
 }
+
+var ping = "{\"Method\": \"GET_PERSON\",\"Model\": \"PERSON\"}"
