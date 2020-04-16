@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"math/rand"
 	"net/http"
@@ -28,8 +29,25 @@ func main() {
 
 func handleOrder(request server.Request) server.Response {
 
-	md := request.Action
-	md = md + "-" + strconv.Itoa(rand.Intn(1000))
+	by, err := json.Marshal(request.Data)
+	if err != nil {
+		return server.Response{
+			Status:  "ERROR",
+			Message: err.Error(),
+		}
+	}
+
+	var data *PingMsg
+	err = json.Unmarshal(by, &data)
+	if err != nil {
+		return server.Response{
+			Status:  "ERROR",
+			Message: err.Error(),
+		}
+	}
+
+	md := data.Name
+	md = md + "-" + strconv.Itoa(rand.Intn(100000))
 
 	return server.Response{
 		Status:  "OK",
@@ -49,4 +67,10 @@ func UpgradeWebsocket(w http.ResponseWriter, r *http.Request) {
 		log.Printf("FAIL TO ADD CONNECTION")
 		conn.Close()
 	}
+}
+
+type PingMsg struct {
+	Name  string
+	Age   int
+	Ready bool
 }

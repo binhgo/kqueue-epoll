@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"kqueue-epoll/server"
 )
 
 var (
@@ -76,10 +78,29 @@ func main() {
 			if err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(time.Second*5)); err != nil {
 				fmt.Printf("Failed to receive pong: %v", err)
 			}
+
 			// conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Hello from conn %v", i)))
-			conn.WriteMessage(websocket.TextMessage, []byte(ping))
+
+			dat := PingMsg{
+				Name:  "Huynh Ngoc Binh",
+				Age:   30,
+				Ready: true,
+			}
+
+			req := server.Request{
+				Action: "GET-ORDER",
+				Data:   dat,
+			}
+
+			by, _ := json.Marshal(req)
+
+			conn.WriteMessage(websocket.TextMessage, by)
 		}
 	}
 }
 
-var ping = "{\"Method\": \"GET_ORDER\",\"Model\": \"PERSON\"}"
+type PingMsg struct {
+	Name  string
+	Age   int
+	Ready bool
+}
